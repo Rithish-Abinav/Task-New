@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js" integrity="sha512-v2CJ7UaYy4JwqLDIrZUI/4hqeoQieOmAZNXBeQyjo21dadnwR+8ZaIJVT8EE2iyI61OV8e6M8PP2/4hpQINQ/g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js" integrity="sha512-b94Z6431JyXY14iSXwgzeZurHHRNkLt9d6bAHt7BZT38eqV+GyngIi/tVye4jBKPYQ2lBdRs0glww4fmpuLRwA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" integrity="sha512-z3gLpd7yknf1YoNbCzqRKc4qyor8gaKU1qmn+CShxbuBusANI9QpRohGBreCFkKxLhei6S9CQXFEbbKuqLg0DA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+  <title>Your App</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js" integrity="sha512-b94Z6431JyXY14iSXwgzeZurHHRNkLt9d6bAHt7BZT38eqV+GyngIi/tVye4jBKPYQ2lBdRs0glww4fmpuLRwA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <style>
+    .load {
+      display: none;
+    }
+
+    .image_gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+    }
+
+    .image_gallery img {
+      width: 48%;
+      margin-bottom: 1%;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="load" onclick="hideImagePreview()"></div>
+    <div class="_container">
+      <div class="search_box">
+        <input type="text" placeholder="Search Here..." oninput="updateInput(event)" onkeypress="handleKeyPress(event)">
+        <button onclick="getImage()">Search</button>
+      </div>
+
+      <div class="image_gallery" id="masonry"></div>
+    </div>
+
+    <!-- Image Preview -->
+    <div id="image-view" class="image_view">
+      <button class="close" onclick="hideImagePreview()"><i class="fa-solid fa-rectangle-xmark"></i></button>
+      <button class="left_btn" onclick="showPrevImage()"><i class="fa-solid fa-circle-chevron-left"></i></button>
+      <img id="preview-image" alt="preview">
+      <button class="right_btn" onclick="showNextImage()"><i class="fa-solid fa-circle-chevron-right"></i></button>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'https://api.unsplash.com/search/photos';
+    const client_accessKey = 'v8nFXzEMKkuhHSEUTQtUn9HgPHDy-hgaHiDNZIRZ4sk';
+    let inp = 'interview';
+    let images = [];
+    let loading = false;
+    let selectedImage = null;
+    let currentIndex = 0;
+    $('.image_view').hide()
+
+    const getImage = async () => {
+      try {
+        loading = true;
+        const response = await axios.get(`${API_URL}?query=${inp}&page=1&per_page=20&client_id=${client_accessKey}`);
+        images = response.data.results;
+        $('.load').show()
+        updateGallery();
+      } catch (error) {
+        console.error('Error fetching images:', error);
+      } finally {
+        loading = false;
+        $('.load').hide()
+      }
+    };
+
+    const updateInput = (event) => {
+      inp = event.target.value;
+    };
+
+    const handleKeyPress = (event) => {
+      if (event.key === 'Enter') {
+        getImage();
+      }
+    };
+
+    const showImage = (item) => {
+      loading = true;
+      selectedImage = item.urls.full;
+      currentIndex = images.findIndex((img) => img.id === item.id);
+      showImagePreview();
+    };
+
+    const showNextImage = () => {
+      const nextIndex = (currentIndex + 1) % images.length;
+      loading = true;
+      selectedImage = images[nextIndex]?.urls.full;
+      currentIndex = nextIndex;
+      updateImagePreview();
+    };
+
+    const showPrevImage = () => {
+      const prevIndex = (currentIndex - 1 + images.length) % images.length;
+      loading = true;
+      selectedImage = images[prevIndex]?.urls.full;
+      currentIndex = prevIndex;
+      updateImagePreview();
+    };
+
+    const updateGallery = () => {
+      const galleryContainer = $('#masonry');
+      galleryContainer.empty();
+
+      images.forEach((item) => {
+        const imgElement = $('<img>').attr('src', item.urls.small).attr('alt', item.alt_description).click(() => {
+          showImage(item);
+          $(".load").show();
+        });
+        galleryContainer.append(imgElement);
+      });
+    };
+
+    const showImagePreview = () => {
+      updateImagePreview();
+      $('#image-view').show();
+    };
+
+    const updateImagePreview = () => {
+      $('#preview-image').attr('src', selectedImage);
+    };
+
+    const hideImagePreview = () => {
+      loading = false;
+      $('.load').hide()
+      selectedImage = null;
+      $('#image-view').hide();
+    };
+
+    $(document).ready(() => {
+      getImage();
+    });
+  </script>
+</body>
+</html>
